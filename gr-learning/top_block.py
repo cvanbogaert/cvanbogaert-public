@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: NBFM Receiver
-# Generated: Tue Jul 31 14:33:24 2018
+# Generated: Tue Jul 31 15:30:32 2018
 ##################################################
 
 from distutils.version import StrictVersion
@@ -71,9 +71,11 @@ class top_block(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.tuner_center_frequency = tuner_center_frequency = 162475000
+        self.squelch_level = squelch_level = 0
         self.samp_rate = samp_rate = 8000000
         self.interpolation = interpolation = 3
         self.deviation = deviation = 500000
+        self.decimation_2 = decimation_2 = 5
         self.decimation = decimation = 50
         self.audio_rate = audio_rate = 48000
 
@@ -83,17 +85,56 @@ class top_block(gr.top_block, Qt.QWidget):
         self._tuner_center_frequency_range = Range(0, 6000000000, 2500, 162475000, 200)
         self._tuner_center_frequency_win = RangeWidget(self._tuner_center_frequency_range, self.set_tuner_center_frequency, 'Frequency', "counter_slider", float)
         self.top_layout.addWidget(self._tuner_center_frequency_win)
+        self._squelch_level_range = Range(-100000, 100000, 1, 0, 200)
+        self._squelch_level_win = RangeWidget(self._squelch_level_range, self.set_squelch_level, 'Squelch', "counter_slider", float)
+        self.top_layout.addWidget(self._squelch_level_win)
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=interpolation,
-                decimation=1,
+                decimation=decimation_2,
                 taps=None,
                 fractional_bw=None,
         )
+        self.qtgui_waterfall_sink_x_1_0_0 = qtgui.waterfall_sink_f(
+        	1024, #size
+        	firdes.WIN_BLACKMAN_hARRIS, #wintype
+        	0, #fc
+        	audio_rate, #bw
+        	"Audio", #name
+                1 #number of inputs
+        )
+        self.qtgui_waterfall_sink_x_1_0_0.set_update_time(0.10)
+        self.qtgui_waterfall_sink_x_1_0_0.enable_grid(False)
+        self.qtgui_waterfall_sink_x_1_0_0.enable_axis_labels(True)
+
+        if not True:
+          self.qtgui_waterfall_sink_x_1_0_0.disable_legend()
+
+        if "float" == "float" or "float" == "msg_float":
+          self.qtgui_waterfall_sink_x_1_0_0.set_plot_pos_half(not False)
+
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
+        colors = [0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+                  1.0, 1.0, 1.0, 1.0, 1.0]
+        for i in xrange(1):
+            if len(labels[i]) == 0:
+                self.qtgui_waterfall_sink_x_1_0_0.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_waterfall_sink_x_1_0_0.set_line_label(i, labels[i])
+            self.qtgui_waterfall_sink_x_1_0_0.set_color_map(i, colors[i])
+            self.qtgui_waterfall_sink_x_1_0_0.set_line_alpha(i, alphas[i])
+
+        self.qtgui_waterfall_sink_x_1_0_0.set_intensity_range(-140, 10)
+
+        self._qtgui_waterfall_sink_x_1_0_0_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_1_0_0.pyqwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_waterfall_sink_x_1_0_0_win)
         self.qtgui_waterfall_sink_x_1_0 = qtgui.waterfall_sink_c(
         	1024, #size
         	firdes.WIN_BLACKMAN_hARRIS, #wintype
         	0, #fc
-        	samp_rate/decimation, #bw
+        	samp_rate*interpolation/decimation/decimation_2, #bw
         	"Post Resampler", #name
                 1 #number of inputs
         )
@@ -197,25 +238,6 @@ class top_block(gr.top_block, Qt.QWidget):
 
         self._qtgui_waterfall_sink_x_0_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_waterfall_sink_x_0_win)
-        self.qtgui_sink_x_0 = qtgui.sink_f(
-        	1024, #fftsize
-        	firdes.WIN_BLACKMAN_hARRIS, #wintype
-        	0, #fc
-        	audio_rate, #bw
-        	"", #name
-        	True, #plotfreq
-        	True, #plotwaterfall
-        	True, #plottime
-        	True, #plotconst
-        )
-        self.qtgui_sink_x_0.set_update_time(1.0/10)
-        self._qtgui_sink_x_0_win = sip.wrapinstance(self.qtgui_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._qtgui_sink_x_0_win)
-
-        self.qtgui_sink_x_0.enable_rf_freq(False)
-
-
-
         self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + 'hackrf=0' )
         self.osmosdr_source_0.set_sample_rate(samp_rate)
         self.osmosdr_source_0.set_center_freq(tuner_center_frequency-deviation, 0)
@@ -230,30 +252,27 @@ class top_block(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_bandwidth(0, 0)
 
         self.freq_xlating_fft_filter_ccc_0 = filter.freq_xlating_fft_filter_ccc(decimation, (firdes.complex_band_pass(1,samp_rate,-samp_rate/decimation/2,samp_rate/decimation/2,samp_rate/decimation/16)), deviation, samp_rate)
-        self.freq_xlating_fft_filter_ccc_0.set_nthreads(4)
+        self.freq_xlating_fft_filter_ccc_0.set_nthreads(2)
         self.freq_xlating_fft_filter_ccc_0.declare_sample_delay(0)
         self.audio_sink_0 = audio.sink(audio_rate, '', True)
         self.analog_nbfm_rx_0 = analog.nbfm_rx(
         	audio_rate=audio_rate,
-        	quad_rate=samp_rate*3/decimation,
+        	quad_rate=samp_rate*3/decimation/decimation_2,
         	tau=75e-6,
         	max_dev=5e3,
           )
-        self.analog_agc_xx_0 = analog.agc_cc(1e-4, 1.0, 1.0)
-        self.analog_agc_xx_0.set_max_gain(65536)
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_agc_xx_0, 0), (self.analog_nbfm_rx_0, 0))
-        self.connect((self.analog_agc_xx_0, 0), (self.qtgui_waterfall_sink_x_1_0, 0))
         self.connect((self.analog_nbfm_rx_0, 0), (self.audio_sink_0, 0))
-        self.connect((self.analog_nbfm_rx_0, 0), (self.qtgui_sink_x_0, 0))
+        self.connect((self.analog_nbfm_rx_0, 0), (self.qtgui_waterfall_sink_x_1_0_0, 0))
         self.connect((self.freq_xlating_fft_filter_ccc_0, 0), (self.qtgui_waterfall_sink_x_1, 0))
         self.connect((self.freq_xlating_fft_filter_ccc_0, 0), (self.rational_resampler_xxx_0, 0))
         self.connect((self.osmosdr_source_0, 0), (self.freq_xlating_fft_filter_ccc_0, 0))
         self.connect((self.osmosdr_source_0, 0), (self.qtgui_waterfall_sink_x_0, 0))
-        self.connect((self.rational_resampler_xxx_0, 0), (self.analog_agc_xx_0, 0))
+        self.connect((self.rational_resampler_xxx_0, 0), (self.analog_nbfm_rx_0, 0))
+        self.connect((self.rational_resampler_xxx_0, 0), (self.qtgui_waterfall_sink_x_1_0, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "top_block")
@@ -268,12 +287,18 @@ class top_block(gr.top_block, Qt.QWidget):
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.tuner_center_frequency-self.deviation, self.samp_rate)
         self.osmosdr_source_0.set_center_freq(self.tuner_center_frequency-self.deviation, 0)
 
+    def get_squelch_level(self):
+        return self.squelch_level
+
+    def set_squelch_level(self, squelch_level):
+        self.squelch_level = squelch_level
+
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate/self.decimation)
+        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate*self.interpolation/self.decimation/self.decimation_2)
         self.qtgui_waterfall_sink_x_1.set_frequency_range(0, self.samp_rate/self.decimation)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.tuner_center_frequency-self.deviation, self.samp_rate)
         self.osmosdr_source_0.set_sample_rate(self.samp_rate)
@@ -284,6 +309,7 @@ class top_block(gr.top_block, Qt.QWidget):
 
     def set_interpolation(self, interpolation):
         self.interpolation = interpolation
+        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate*self.interpolation/self.decimation/self.decimation_2)
 
     def get_deviation(self):
         return self.deviation
@@ -294,12 +320,19 @@ class top_block(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_center_freq(self.tuner_center_frequency-self.deviation, 0)
         self.freq_xlating_fft_filter_ccc_0.set_center_freq(self.deviation)
 
+    def get_decimation_2(self):
+        return self.decimation_2
+
+    def set_decimation_2(self, decimation_2):
+        self.decimation_2 = decimation_2
+        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate*self.interpolation/self.decimation/self.decimation_2)
+
     def get_decimation(self):
         return self.decimation
 
     def set_decimation(self, decimation):
         self.decimation = decimation
-        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate/self.decimation)
+        self.qtgui_waterfall_sink_x_1_0.set_frequency_range(0, self.samp_rate*self.interpolation/self.decimation/self.decimation_2)
         self.qtgui_waterfall_sink_x_1.set_frequency_range(0, self.samp_rate/self.decimation)
         self.freq_xlating_fft_filter_ccc_0.set_taps((firdes.complex_band_pass(1,self.samp_rate,-self.samp_rate/self.decimation/2,self.samp_rate/self.decimation/2,self.samp_rate/self.decimation/16)))
 
@@ -308,7 +341,7 @@ class top_block(gr.top_block, Qt.QWidget):
 
     def set_audio_rate(self, audio_rate):
         self.audio_rate = audio_rate
-        self.qtgui_sink_x_0.set_frequency_range(0, self.audio_rate)
+        self.qtgui_waterfall_sink_x_1_0_0.set_frequency_range(0, self.audio_rate)
 
 
 def main(top_block_cls=top_block, options=None):
