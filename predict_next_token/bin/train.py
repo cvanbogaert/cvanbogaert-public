@@ -1,11 +1,12 @@
+#!/usr/bin/python
+
 import tensorflow as tf
 import keras_preprocessing.text as kpt
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import codecs
-
-#tf.enable_eager_execution()
+import json
 
 #source text file information
 encoding = 'utf-8'
@@ -15,6 +16,7 @@ origin = 'https://sherlock-holm.es/stories/plain-text/cnus.txt'
 #how to tokenize the text
 char_level = True
 max_tokens = 10000000
+vocab_filename = 'vocab.json'
 
 #how to split the tokens into training and validation data
 validation_split = 0.2
@@ -35,12 +37,13 @@ num_validation_steps=1
 device = '/gpu:1'
 model_filename='pnt.h5'
 checkpoint_filename='pnt_checkpoint.h5'
-num_epochs = 250
+num_epochs = 1000
+steps_per_epoch = 50
 
 #how to do the text sample
 epochs_per_sample = 10
 sample_text_size = 1000
-temperature=0.1
+temperature=0.01
 
 
 
@@ -57,6 +60,9 @@ tokens = tokens[:max_tokens]
 
 vocab=t.word_index
 vocab_size = len(vocab)
+
+with codecs.open(vocab_filename, 'w', encoding='utf-8') as f:
+  f.write(json.dumps(vocab, ensure_ascii=False, sort_keys = True, indent = 4))
 
 #divide the tokens into training and validation sets
 num_tokens=len(tokens)
@@ -91,6 +97,7 @@ def generate_text(model,timesteps,t,text_size):
     
     inv_vocab = {v: k for k, v in vocab.iteritems()}
     inv_vocab[0] = '\0'
+
     indexes = np.random.randint(vocab_size,size=timesteps).reshape(1,timesteps)
     predictions = []
     probability_history = []
@@ -179,8 +186,6 @@ with tf.device(device):
                         validation_data=validation_dataset,
                         validation_steps=num_validation_steps,
                         callbacks=callbacks)
-    
-    print history
     
     model.save(model_filename)
     
