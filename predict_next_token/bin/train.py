@@ -43,13 +43,13 @@ patience = 100
 num_final_validation_steps = 50
 stats_filename = 'stats.csv'
 # grid
-units_grid = [1, 2, 4, 8, 16, 32, 64, 128, 256]
-timesteps_grid = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+units_grid = [256]
+timesteps_grid = [256]
 #dropout_grid = [0.0,0.01,0.02,0.05,0.1,0.2,0.5]
 #layers_grid = [1,2,3,4,5,6,7,8]
 
-dropout_grid = [0.0]
-layers_grid = [4,8,16]
+dropout_grid = [0.2]
+layers_grid = [4]
 
 
 def dataset_from_tokens(tokens, timesteps, batch_size):
